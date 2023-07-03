@@ -115,6 +115,7 @@ pub struct Build {
     goarch: Option<OsString>,
     goos: Option<OsString>,
     cargo_metadata: bool,
+    warnings_into_errors: bool,
 }
 
 /// Represents the types of errors that may occur.
@@ -172,6 +173,7 @@ impl Build {
             goarch: None,
             goos: None,
             cargo_metadata: true,
+            warnings_into_errors: true,
         }
     }
 
@@ -264,6 +266,14 @@ impl Build {
         self
     }
 
+    /// Define whether warnings should be treated as errors.
+    /// 
+    /// Defaults to `true`.
+    pub fn warnings_into_errors(&mut self, warnings_into_errors: bool) -> &mut Build {
+        self.warnings_into_errors = warnings_into_errors;
+        self
+    }
+
     /// Run the compiler, generating the file `output`
     ///
     /// This will return a result instead of panicing; see compile() for the complete description.
@@ -276,12 +286,15 @@ impl Build {
             self.println(&format!("cargo:rerun-if-changed={}", file.display()));
         }
 
-        let ccompiler = cc::Build::new().try_get_compiler().map_err(|e| {
-            Error::new(
-                ErrorKind::ToolNotFound,
-                &format!("could not find c compiler: {}", e),
-            )
-        })?;
+        let ccompiler = cc::Build::new()
+            .warnings_into_errors(self.warnings_into_errors)
+            .try_get_compiler()
+            .map_err(|e| {
+                Error::new(
+                    ErrorKind::ToolNotFound,
+                    &format!("could not find c compiler: {}", e),
+                )
+            })?;
 
         let mut command = process::Command::new(&self.compiler);
         command.arg("build");
