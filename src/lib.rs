@@ -289,7 +289,7 @@ impl Build {
         command.args(&["-o", &out.display().to_string()]);
         command.args(self.files.iter());
         command.env("CGO_ENABLED", "1");
-        command.env("CC", ccompiler.path());
+        command.env("CC", format!(r#""{}""#, ccompiler.path().display()));
 
         let goarch = self
             .goarch
@@ -299,7 +299,7 @@ impl Build {
         command.env("GOARCH", goarch);
 
         let goos = self
-            .goarch
+            .goos
             .as_ref()
             .map(|g| Ok(g.to_owned()))
             .unwrap_or_else(|| self.get_goos())?;
